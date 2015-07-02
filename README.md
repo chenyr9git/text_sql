@@ -5,6 +5,7 @@ A set of SQL query similiar commands to deal with text(TSV) as structured databa
 COMMAND LIST:
 --------------------------------------------------------
 ## tjoin
+Partial text match join in the specified column. An interesting use case is to perform a Chinese word segmentation.
 
 	Usage: ./tjoin DICTION_FILE [DICTION_COLUMN [SOURCE_COLUMN [MODE [POSITION]]]]
 
@@ -19,6 +20,7 @@ COMMAND LIST:
         2  match the tail of the field
 
 ## pjoin
+Whole column match join, similiar to join operator in SQL
 
 	Usage: ./pjoin DICTION_FILE [DICTION_COLUMN [SOURCE_COLUMN [MODE]]]
 
