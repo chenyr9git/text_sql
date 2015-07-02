@@ -6,9 +6,8 @@ COMMAND LIST:
 --------------------------------------------------------
 [X] tjoin
 
-```shell
-Usage: ./tjoin DICTION_FILE [DICTION_COLUMN [SOURCE_COLUMN [MODE [POSITION]]]]
-```
+	Usage: ./tjoin DICTION_FILE [DICTION_COLUMN [SOURCE_COLUMN [MODE [POSITION]]]]
+
     MODE can take values of:
         1   OR
         2   AND
@@ -19,10 +18,10 @@ Usage: ./tjoin DICTION_FILE [DICTION_COLUMN [SOURCE_COLUMN [MODE [POSITION]]]]
         1  match the head of the field
         2  match the tail of the field
 
-
 [ ] pjoin
 
-Usage: ./pjoin DICTION_FILE [DICTION_COLUMN [SOURCE_COLUMN [MODE]]]
+	Usage: ./pjoin DICTION_FILE [DICTION_COLUMN [SOURCE_COLUMN [MODE]]]
+
     MODE can take values of:
         1   OR
         2   AND
