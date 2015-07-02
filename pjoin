@@ -1,0 +1,85 @@
+#!/usr/bin/perl
+use strict;
+
+my $MODE_OR=1;
+my $MODE_AND=2;
+my $MODE_SUB=3;
+
+exit(main(@ARGV));
+
+sub usage {
+    print STDERR <<ENDL;
+Usage: $0 DICTION_FILE [DICTION_COLUMN [SOURCE_COLUMN [MODE]]]
+    MODE can take values of:
+        1   OR
+        2   AND
+        3   SUBSTRACT
+
+	If a Cartesian Product wanted, set both DICTION_COLUMN and SOURCE_COLUMN to be -1
+ENDL
+    return 1;
+}
+
+sub readDict {
+	my ($f,$col)=@_;
+	my $h={};
+	open my $IN, "<$f" or die "Error in open file $f";
+
+	while (<$IN>) {
+		s/[\n\r]+//g;
+		my @F=split(/\t/);
+		my @new_F=();
+		for (my $i=0;$i<=$#F;$i++) {
+			push @new_F, $F[$i] if ($i!=$col);
+		}
+
+	my $key=1;
+		$key=$F[$col] if ($col>=0);
+		push @{$h->{$key}},join("\t",@new_F);
+	}
+
+	close $IN;
+	return $h;
+}
+
+sub main {
+	my  ($fdict,$dict_col,$join_col,$mode) = @_;
+    if (!defined $fdict) {return usage();}
+
+    if (!defined $dict_col) {$dict_col=0;}
+    if (!defined $join_col) {$join_col=0;}
+    if (!defined $mode) {$mode=$MODE_OR;}
+	my $h=readDict($fdict,$dict_col);
+
+	while (<STDIN>) {
+		s/[\n\r]+//g;
+        my @F=split(/\t/);
+		my $key=1;
+		$key=$F[$join_col] if ($join_col>=0);
+        my $extras=$h->{$key};
+
+		my $l=$_;
+        if ($mode==$MODE_OR) {
+			if (defined $extras) {
+				foreach my $extra (@$extras) {
+					print $l,"\t",$extra,"\n";
+				}
+			} else {
+				print $l,"\n";
+			}
+        } elsif ($mode == $MODE_AND) {
+			if (defined $extras) {
+				foreach my $extra (@$extras) {
+					print $l,"\t",$extra,"\n";
+				}
+			}
+            
+        } elsif ($mode == $MODE_SUB) {
+            print $l, "\n" if (!defined $extras);
+        }
+	}	
+
+	return 0;
+}
+
+

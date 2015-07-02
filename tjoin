@@ -1,0 +1,175 @@
+#!/usr/bin/perl
+use strict;
+use Data::Dumper;
+BEGIN {
+use FindBin;
+push @INC,$FindBin::Bin;
+}
+
+my $MODE_OR=1;
+my $MODE_AND=2;
+my $MODE_SUB=3;
+
+my ($POS_ANYWHERE,$POS_HEAD,$POS_TAIL)=(0,1,2);
+
+exit(main(@ARGV));
+
+sub usage {
+    print STDERR <<ENDL;
+Usage: $0 DICTION_FILE [DICTION_COLUMN [SOURCE_COLUMN [MODE [POSITION]]]]
+    MODE can take values of:
+        1   OR
+        2   AND
+        3   SUBSTRACT
+
+    POSITION can take values of:
+        0  default value, match anywhere
+        1  match the head of the field
+        2  match the tail of the field
+ENDL
+    return 1;
+}
+
+sub read_dict {
+	my ($f,$col)=@_;
+	my $h={};
+	open my $IN, "<$f" or die "Error in open file $f";
+
+	while (<$IN>) {
+		s/[\n\r]+//g;
+		my @F=split(/\t/);
+		my @new_F=();
+		for (my $i=0;$i<=$#F;$i++) {
+			push @new_F, $F[$i] if ($i!=$col);
+		}
+
+	my $key=1;
+		$key=$F[$col] if ($col>=0);
+		push @{$h->{$key}},join("\t",@new_F);
+	}
+
+	close $IN;
+	return $h;
+}
+
+sub pattern_from_key {
+	my ($h) = @_;
+
+	my @arr_str;
+	foreach my $k (keys %$h) {
+		push @arr_str,$k;
+	}
+
+	my $pat=trie_regexp(\@arr_str);
+	my $bracket_pat=qr/($pat)/;
+	return $bracket_pat;
+}
+
+sub print_result {
+	my ($l,$extras,$mode)=@_;
+
+	if ($mode==$MODE_OR) {
+		if (defined $extras) {
+			foreach my $extra (@$extras) {
+				print $l,"\t",$extra,"\n";
+			}
+		} else {
+			print $l,"\n";
+		}
+	} elsif ($mode == $MODE_AND) {
+		if (defined $extras) {
+			foreach my $extra (@$extras) {
+				print $l,"\t",$extra,"\n";
+			}
+		}
+
+	} elsif ($mode == $MODE_SUB) {
+		print $l, "\n" if (!defined $extras);
+	}
+}
+
+sub trie_add {
+	my ($h,$str)=@_;
+
+	for my $char (split //, $str) {
+		$h->{$char} ||={};
+		$h=$h->{$char};
+	}
+	$h->{''}=1;
+}
+
+sub trie_regexp_str {
+	my ($h)=@_;
+	return if ($h->{''} and	scalar(keys %$h)==1);
+
+	my (@alt,@cc);
+	my $q=0;
+	for my $char (sort keys %$h) {
+		my $qchar=quotemeta($char);
+		if (ref $h->{$char}) {
+			if (defined (my $recurse=trie_regexp_str($h->{$char}))) {
+				push @alt, $qchar . $recurse;
+			} else {
+				push @cc,$qchar;
+			}
+		} else {
+			$q=1;
+		}
+	}
+	
+	my $cconly=!@alt;
+	@cc and push @alt, @cc==1 ? $cc[0] : '['.join('',@cc).']';
+	my $result= @alt==1 ? $alt[0] : '(?:'.join('|',@alt).')';
+	$q and $result=$cconly ? "$result?" : "(?:$result)?";
+
+	return $result;
+}
+
+sub trie_regexp {
+	my ($arr_str)=@_;
+
+	my $h={};
+	foreach my $str (@$arr_str) {
+		trie_add($h,$str);	
+	}
+
+	my $regexp=trie_regexp_str($h);
+	return qr/$regexp/;
+}
+
+sub main {
+	my  ($fdict,$dict_col,$join_col,$mode,$position_mode) = @_;
+    if (!defined $fdict) {return usage();}
+
+    if (!defined $dict_col) {$dict_col=0;}
+    if (!defined $join_col) {$join_col=0;}
+    if (!defined $mode) {$mode=$MODE_OR;}
+	if (!defined $position_mode) {$position_mode=$POS_ANYWHERE;}
+
+	my $h=read_dict($fdict,$dict_col);
+	my $pat=pattern_from_key($h);
+
+	if ($position_mode == $POS_HEAD) {
+		$pat=qr/^$pat/;		
+	} elsif ($position_mode == $POS_TAIL) {
+		$pat=qr/$pat$/;
+	}
+
+	while (<STDIN>) {
+		s/[\n\r]+//g;
+        my @F=split(/\t/);
+		my $l=$_;
+
+		while ($F[$join_col]=~/$pat/g) {
+			my $key=$1;
+			my $extras=$h->{$key};
+			
+			print_result($l."\t".$key,$extras,$mode);
+		}
+	}
+
+	return 0;
+}
+
+
+
