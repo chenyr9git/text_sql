@@ -4,7 +4,7 @@ A set of SQL query similiar commands to deal with text(TSV) as structured databa
 
 COMMAND LIST:
 --------------------------------------------------------
-[X] tjoin
+## tjoin
 
 	Usage: ./tjoin DICTION_FILE [DICTION_COLUMN [SOURCE_COLUMN [MODE [POSITION]]]]
 
@@ -18,7 +18,7 @@ COMMAND LIST:
         1  match the head of the field
         2  match the tail of the field
 
-[ ] pjoin
+## pjoin
 
 	Usage: ./pjoin DICTION_FILE [DICTION_COLUMN [SOURCE_COLUMN [MODE]]]
 
